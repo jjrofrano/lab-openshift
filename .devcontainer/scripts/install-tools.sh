@@ -2,7 +2,7 @@
 ######################################################################
 # These scripts are meant to be run in user mode as they modify
 # usr settings line .bashrc and .bash_aliases
-# Copyright 2022, 2024 John J. Rofrano All Rights Reserved.
+# Copyright 2022, 2026 John J. Rofrano All Rights Reserved.
 ######################################################################
 
 echo "**********************************************************************"
@@ -11,6 +11,18 @@ echo "**********************************************************************"
 # Convert inconsistent architectures (x86_64=amd64) (aarch64=arm64)
 ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')"
 echo "Architecture is:" $ARCH
+
+echo "**********************************************************************"
+echo "Installing Kubernetes Command Line Interface (kubectl)..."
+echo "**********************************************************************"
+release=$(curl -s https://dl.k8s.io/release/stable.txt)
+curl -LO "https://dl.k8s.io/release/${release}/bin/linux/${ARCH}/kubectl"
+chmod +x ./kubectl
+sudo install -c -m 0755 kubectl /usr/local/bin
+rm ./kubectl
+echo "Creating kc and kns alias for kubectl..."
+echo "alias kc='/usr/local/bin/kubectl'" >> $HOME/.bash_aliases
+echo "alias kns='kubectl config set-context --current --namespace'" >> $HOME/.bash_aliases
 
 echo "**********************************************************************"
 echo "Installing K3D Kubernetes..."
@@ -22,9 +34,16 @@ echo "alias kns='kubectl config set-context --current --namespace'" >> $HOME/.ba
 sudo sh -c 'echo "127.0.0.1 cluster-registry" >> /etc/hosts'
 
 echo "**********************************************************************"
+echo "Installing Helm..."
+echo "**********************************************************************"
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+chmod 700 get_helm.sh
+./get_helm.sh
+
+echo "**********************************************************************"
 echo "Installing K9s..."
 echo "**********************************************************************"
-curl -L -o k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v0.50.16/k9s_Linux_$ARCH.tar.gz"
+curl -L -o k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v0.50.18/k9s_Linux_$ARCH.tar.gz"
 tar xvzf k9s.tar.gz
 sudo install -c -m 0755 k9s /usr/local/bin
 rm k9s.tar.gz
@@ -44,7 +63,7 @@ sudo install -c -m 0755 devspace /usr/local/bin
 echo "**********************************************************************"
 echo "Installing Stern..."
 echo "**********************************************************************"
-curl -L -o stern.tar.gz "https://github.com/stern/stern/releases/download/v1.33.0/stern_1.32.0_linux_$ARCH.tar.gz"
+curl -L -o stern.tar.gz "https://github.com/stern/stern/releases/download/v1.33.1/stern_1.33.1_linux_$ARCH.tar.gz"
 tar xvzf stern.tar.gz
 sudo install -c -m 0755 stern /usr/local/bin
 rm stern.tar.gz LICENSE
@@ -52,7 +71,7 @@ rm stern.tar.gz LICENSE
 echo "**********************************************************************"
 echo "Installing Knative CLI..."
 echo "**********************************************************************"
-curl -L -o kn "https://github.com/knative/client/releases/download/knative-v1.20.0/kn-linux-$ARCH"
+curl -L -o kn "https://github.com/knative/client/releases/download/knative-v1.21.0/kn-linux-$ARCH"
 sudo install -c -m 0755 kn /usr/local/bin
 rm kn
 
@@ -60,9 +79,9 @@ echo "**********************************************************************"
 echo "Installing Tekton CLI..."
 echo "**********************************************************************"
 if [ $ARCH == amd64 ]; then
-    curl -L https://github.com/tektoncd/cli/releases/download/v0.42.0/tkn_0.42.0_Linux_x86_64.tar.gz --output tekton.tar.gz
+    curl -L https://github.com/tektoncd/cli/releases/download/v0.43.1/tkn_0.43.1_Linux_x86_64.tar.gz --output tekton.tar.gz
 else
-    curl -L https://github.com/tektoncd/cli/releases/download/v0.42.0/tkn_0.42.0_Linux_aarch64.tar.gz --output tekton.tar.gz
+    curl -L https://github.com/tektoncd/cli/releases/download/v0.43.1/tkn_0.43.1_Linux_aarch64.tar.gz --output tekton.tar.gz
 fi;
 tar xvzf tekton.tar.gz tkn
 sudo install -c -m 0755 tkn /usr/local/bin
